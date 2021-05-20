@@ -49,7 +49,7 @@
             "@php artisan key:generate --ansi"
         ],
         "lint": [
-            "@php vendor/bin/phpcs --standard=phpcs-laravel app/"
+            "@php vendor/bin/phpcs --standard=PSR2 app/"
         ],
         "duplicate:check": [
             "@php vendor/bin/phpcpd app/"
