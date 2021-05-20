@@ -1,0 +1,97 @@
+version: '3.9'
+
+networks:
+  imbrett:
+
+services:
+  site:
+    build:
+      context: ./
+      dockerfile: ./docker/dev/nginx/Dockerfile
+    container_name: nginx
+    ports:
+      - 80:80
+    volumes:
+      - ./src:/var/www/html:delegated
+    depends_on:
+      - php
+      - redis
+      - mysql
+      - mailhog
+    networks:
+      - imbrett
+
+  mysql:
+    image: mysql:5.7.29
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: homestead
+      MYSQL_USER: homestead
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - imbrett
+
+  php:
+    build:
+      context: ./
+      dockerfile: ./docker/dev/php/Dockerfile
+    container_name: php
+    volumes:
+      - ./src:/var/www/html:delegated
+    networks:
+      - imbrett
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - imbrett
+
+  composer:
+    build:
+      context: ./
+      dockerfile: ./docker/dev/composer/Dockerfile
+    container_name: composer
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      - php
+    user: imbrett
+    entrypoint: ['composer', '--ignore-platform-reqs']
+    networks:
+      - imbrett
+
+  artisan:
+    build:
+      context: ./
+      dockerfile: ./docker/dev/php/Dockerfile
+    container_name: artisan
+    volumes:
+      - ./src:/var/www/html:delegated
+    depends_on:
+      - mysql
+    working_dir: /var/www/html
+    user: imbrett
+    entrypoint: ['php', '/var/www/html/artisan']
+    networks:
+      - imbrett
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - imbrett
