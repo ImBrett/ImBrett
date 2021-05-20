@@ -8,7 +8,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+        run: |
+          cd src/
+          php -r "file_exists('.env') || copy('.env.example', '.env');"
       - name: Install Dependencies
         run: |
           cd src/
@@ -21,7 +23,7 @@ jobs:
         run: chmod -R 777 src/storage src/bootstrap/cache
       - name: Create Database
         run: |
-          cd src
+          cd src/
           mkdir -p database
           touch database/database.sqlite
       - name: Run CI Commands(Lint, Duplicate Checker, Test)
