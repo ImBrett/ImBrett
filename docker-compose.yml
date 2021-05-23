@@ -26,9 +26,6 @@ services:
     networks:
       - imbrett
 
-  imbrett-ui:
-    image: ghcr.io/imbrett/imbrett_client:main
-
   postgres:
     image: postgres:alpine
     container_name: postgres
