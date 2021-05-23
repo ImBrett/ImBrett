@@ -3,12 +3,17 @@ version: '3.9'
 networks:
   imbrett:
 
+volumes:
+  dbdata:
+    driver: local
+
 services:
-  site:
+  imbrett:
     build:
       context: ./
       dockerfile: ./docker/dev/nginx/Dockerfile
     container_name: nginx
+    env_file: ./src/.env
     ports:
       - 80:80
     volumes:
@@ -16,25 +21,27 @@ services:
     depends_on:
       - php
       - redis
-      - mysql
+      - postgres
       - mailhog
     networks:
       - imbrett
 
-  mysql:
-    image: mysql:5.7.29
-    container_name: mysql
+  imbrett-ui:
+    image: ghcr.io/imbrett/imbrett_client:main
+
+  postgres:
+    image: postgres:alpine
+    container_name: postgres
     restart: unless-stopped
     tty: true
     ports:
-      - 3306:3306
+      - 5432:5432
     environment:
-      MYSQL_DATABASE: homestead
-      MYSQL_USER: homestead
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: secret
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
+      POSTGRES_DB: imbrett
+      POSTGRES_USER: imbrett
+      POSTGRES_PASSWORD: password
+    volumes:
+      - dbdata:/var/lib/postgresql/data
     networks:
       - imbrett
 
@@ -45,6 +52,7 @@ services:
     container_name: php
     volumes:
       - ./src:/var/www/html:delegated
+      - ./docker/dev/php/conf/php-ini-overrides.ini:/etc/php/7.4/fpm/conf.d/99-overrides.ini
     networks:
       - imbrett
 
@@ -63,12 +71,12 @@ services:
       dockerfile: ./docker/dev/composer/Dockerfile
     container_name: composer
     volumes:
-      - ./:/var/www/html
+      - ./src:/var/www/html
     working_dir: /var/www/html
     depends_on:
       - php
     user: imbrett
-    entrypoint: ['composer', '--ignore-platform-reqs']
+    entrypoint: ['composer']
     networks:
       - imbrett
 
@@ -79,9 +87,9 @@ services:
     container_name: artisan
     volumes:
       - ./src:/var/www/html:delegated
+      - ./docker/dev/php/conf/php-ini-overrides.ini:/etc/php/7.4/fpm/conf.d/99-overrides.ini
     depends_on:
-      - mysql
-    working_dir: /var/www/html
+      - postgres
     user: imbrett
     entrypoint: ['php', '/var/www/html/artisan']
     networks:
